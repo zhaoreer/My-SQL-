@@ -1,0 +1,149 @@
+--查询选修了“数学”但没有成绩的学生的学号和姓名
+select Student.Sno, Sname
+from Student, Course, SC
+where Student.Sno = SC.Sno and Course.Cno = SC.Cno
+and Cname = '数学' and Grade is  null
+
+--相关子查询
+--eg1:查询成绩比该门课的平均成绩要低的学生的选课信息
+select * from SC A
+where Grade < (select avg(Grade) from SC B where B.Cno = A.Cno)
+--eg2:查询选修了2号课的学生的姓名
+--方法1：连接查询
+select Sname
+from Student, SC
+where Student.Sno = SC.Sno and Cno = '2'
+
+--方法2：子查询
+select Sname
+from Student
+where Sno in (select Sno from SC where Cno = '2')
+
+--方法3：相关子查询
+--exists
+select ....
+from ..
+where exists(select * from ... where....)
+
+--正确
+select Sname from Student
+where exists(select * from SC where SC.Sno = Student.Sno and Cno = '2')		
+--错误					
+select Sname from Student
+where exists(select * from SC where Cno = '2')					
+					
+
+--eg2:查询没有选修2号课的学生的姓名
+select Sname from Student
+where not exists(select * from SC where SC.Sno = Student.Sno and Cno = '2')		
+
+--集合查询
+--并集 union
+--查询cs系或女生的信息
+select * from Student where Sdept = 'cs'
+union
+select * from Student where Ssex = '女'
+
+--交集 intersect
+--查询cs系且男生的信息
+select * from Student where Sdept = 'cs'
+intersect
+select * from Student where Ssex = '男'
+
+--差集	except	
+--查询cs系所有女生的信息
+select * from Student where Sdept = 'cs'
+except
+select * from Student where Ssex = '男'		
+
+DBMS：
+DDL---->create, alter, drop
+DQL---->select
+DML---->insert, update, delete
+
+--插入数据：insert
+--eg1:向SC表中插入一条选课记录('2017003', '1', 90)
+select * from SC
+insert into SC values('2017003', '1', 90)
+--eg2:向SC表中插入两条选课记录('2017003', '2', 80), ('2017003', '3', 70)
+insert into SC values('2017003', '2', 80), ('2017003', '3', 70)
+--eg3:向SC表中插入一条选课记录('2017004', '4)
+insert into SC(Sno, Cno) values('2017004', '4')
+insert into SC values('2017004', '5', null)
+
+--eg4：创建一个平均成绩表，让所有学生的学号和平均成绩插入到该表中
+--首先，创建平均成绩表avgTable
+create table avgTable
+(
+	Sno char(7),
+	avgGrade int
+)
+
+select * from avgTable
+--接着，将所有学生的学号和平均分插入到平均成绩表
+insert into avgTable
+select Sno, avg(Grade)
+from SC
+group by Sno
+
+--总结：表2必须要事先存在
+insert into 表2
+select ... 
+from  表1
+where....
+
+--方法2：
+select Sno, avg(Grade) avgGrade into avgTable1
+from SC
+group by Sno
+
+select * from avgTable1
+
+--总结：表2事先不存在
+select ... into 表2
+from  表1
+where....
+
+--eg5：
+--创建一个表结构与SC表相同的空表
+select *  into temp from SC where 1=2
+--创建一个和SC表一样的表
+select *  into temp from SC where 1=1
+
+--更新数据:update
+ --eg1：将学号为2017003的学生的年龄该为40
+select * from Student  
+
+update Student
+set Sage = 40
+where Sno = '2017003'
+
+--eg2: 将cs系所有学生的成绩降低10%
+--方法1：
+update SC
+set Grade = Grade * 0.9
+where Sno in(select Sno from Student where Sdept = 'cs')
+
+--方法2：
+update SC
+set Grade = Grade * 0.9
+from Student, SC
+where Student.Sno = SC.Sno and Sdept = 'cs'
+
+--方法3：
+update SC
+set Grade = Grade * 0.9
+from Student inner join SC
+on student.Sno = SC.Sno and Sdept = 'cs'
+
+--删除数据:delete
+--eg1:删除所有没有选课成绩的选课记录
+delete from SC
+where Grade is null
+
+--删除表中的所有数据
+delete from SC
+truncate table SC
+
+
+
